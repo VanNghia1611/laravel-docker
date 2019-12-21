@@ -1,0 +1,76 @@
+version: '3.1'
+services:
+  app:
+    build:
+      context: ./local_docker/app
+    image: api/app:latest
+    ports:
+      - "8000:80"
+    depends_on:
+      - mysql
+      - redis
+    container_name: app
+    hostname: app
+    restart: unless-stopped
+    volumes:
+      - ./local_docker/app/worker.conf:/etc/supervisor/conf.d/worker.conf
+      - .:/var/www/html
+    environment:
+      - REDIS_HOST=redis
+    networks:
+      - api
+  redis:
+    build:
+      context: ./local_docker/redis
+    image: api/redis:latest
+    container_name: redis
+    expose:
+      - 6380
+    volumes:
+      - ./local_docker/redis/data:/data
+    networks:
+      - api
+  mysql:
+    build:
+      context: ./local_docker/mysql
+    image: mysql:5.7
+    container_name: mysql
+    hostname: mysql
+    command:
+      --max_allowed_packet=64MB
+      --key_buffer_size=500M
+      --table_open_cache=4000
+      --sort_buffer_size=3M
+      --read_buffer_size=2M
+      --read_rnd_buffer_size=8M
+      --myisam_sort_buffer_size=64M
+      --max_connections=400
+      --query_cache_type=1
+      --query_cache_limit=5M
+      --query_cache_size=500M
+      --tmp_table_size=20M
+      --max_heap_table_size=20M
+      --thread_cache_size=64
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_DATABASE: "api"
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: "root"
+      # You can use whatever password you like
+      MYSQL_PASSWORD: "root"
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: "root"
+    volumes:
+      - ./local_docker/mysql/data:/var/lib/mysql
+    networks:
+      - api
+volumes:
+  redisdata:
+    driver: local
+  mysqldata:
+    driver: local
+
+networks:
+  api:
+    driver: bridge

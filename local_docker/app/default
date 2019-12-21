@@ -1,0 +1,91 @@
+server {
+    error_log /dev/stdout info;
+    access_log /dev/stdout;
+
+    listen 80;
+    listen [::]:80 default_server ipv6only=on;
+
+    listen 443 ssl;
+    ssl_certificate      /etc/ssl/certs/server.crt;
+    ssl_certificate_key  /etc/ssl/private/server.key;
+
+
+    root /var/www/html/public;
+    index index.php index.html index.htm;
+
+    # Make site accessible from http://localhost/
+    server_name _;
+
+    error_page 404 /index.php;
+
+    location = /favicon.ico { log_not_found off; access_log off; }
+    location = /robots.txt  { log_not_found off; access_log off; }
+
+    # Start Gzip compression
+    gzip on;
+    gzip_comp_level    5;
+    gzip_min_length    256;
+    gzip_proxied       any;
+    gzip_vary          on;
+    gzip_types
+        application/atom+xml
+        application/javascript
+        application/x-javascript
+        application/json
+        application/ld+json
+        application/manifest+json
+        application/rss+xml
+        application/vnd.geo+json
+        application/vnd.ms-fontobject
+        application/x-font-ttf
+        application/x-web-app-manifest+json
+        application/xhtml+xml
+        application/xml
+        font/opentype
+        image/bmp
+        image/svg+xml
+        image/x-icon
+        text/cache-manifest
+        text/css
+        text/javascript
+        text/js
+        text/plain
+        text/vcard
+        text/vnd.rim.location.xloc
+        text/vtt
+        text/x-component
+        text/x-cross-domain-policy;
+
+    # End Gzip Compression
+
+    location / {
+            try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+    }
+    # Feed
+    location ~* \.(?:rss|atom)$ {
+        expires 1h;
+        add_header Cache-Control "public";
+    }
+
+    # Media: images, icons, video, audio, HTC
+    location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
+        expires 1y;
+        access_log off;
+        add_header Cache-Control "public";
+    }
+
+    # CSS and Javascript and Font
+    location ~* \.(?:css|js|woff|ttf|otf|svg|woff2|eot)$ {
+        expires 1y;
+        access_log off;
+        add_header Cache-Control "public";
+    }
+    location ~ /\.ht {
+        deny all;
+    }
+    client_max_body_size 32M;
+}

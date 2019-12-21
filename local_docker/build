@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker build -t api/app:latest ./app
+docker build -t api/mysql:latest ./mysql
+docker build -t api/redis:latest ./redis
